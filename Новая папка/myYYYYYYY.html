@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Живой Космос Анимаций</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: hsl(240, 30%, 4%);
+            transition: background-color 0.5s ease-out;
+            font-family: sans-serif;
+            overflow-x: hidden;
+        }
+
+        /* Стильный неоновый заголовок */
+        .main-header {
+            position: relative;
+            z-index: 10000; /* Всегда поверх летающих карточек */
+            text-align: center;
+            padding: 60px 20px 20px 20px;
+            color: #fff;
+            font-size: 24px;
+            font-weight: 300;
+            letter-spacing: 1px;
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.3), 0 0 20px rgba(255, 255, 255, 0.1);
+            max-width: 800px;
+            margin: 0 auto;
+            pointer-events: none; /* Чтобы заголовок не мешал кликать по карточкам под ним */
+        }
+
+        .gif-container {
+            position: relative;
+            width: 100%;
+            min-height: 100vh;
+        }
+
+        .gif-item {
+            position: absolute;
+            overflow: hidden;
+            border-radius: 16px;
+            background: #141414;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.7);
+            transition: transform 0.3s ease, z-index 0.3s ease, box-shadow 0.3s ease;
+            will-change: transform, left, top;
+            cursor: pointer; /* Меняем курсор на указатель при наведении */
+        }
+
+        /* При наведении карточка замирает, выравнивается и увеличивается */
+        .gif-item:hover {
+            transform: scale(1.25) rotate(0deg) !important;
+            z-index: 99999 !important;
+            box-shadow: 0 15px 50px rgba(255,255,255,0.15);
+        }
+
+        canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Новый заголовок вверху страницы -->
+    <h1 class="main-header">Погрузитесь в космос бесконечных анимаций и эмбиента с этим сайтом <br>
+слева можешь включить музыку
+</h1>
+<audio controls autoplay loop>
+<source src="celestial-whispers_95074.mp3" type="audio/mp3">
+Ваш браузер встроенный аудиоплеер.
+</audio>
+    <div class="gif-container" id="gifContainer"></div>
+
+    <script>
+        const container = document.getElementById('gifContainer');
+        let currentZIndex = 1;
+        const flyingCards = [];
+
+        function createFlyingCard(startY, endY) {
+            const card = document.createElement('div');
+            card.className = 'gif-item';
+            
+            const size = Math.floor(Math.random() * 150) + 100;
+            card.style.width = `${size}px`;
+            card.style.height = `${size}px`;
+
+            const maxX = window.innerWidth - size - 20;
+            let currentX = Math.max(10, Math.floor(Math.random() * maxX));
+            let currentY = Math.floor(Math.random() * (endY - startY)) + startY;
+
+            card.style.left = `${currentX}px`;
+            card.style.top = `${currentY}px`;
+            card.style.zIndex = currentZIndex++;
+
+            const randomRotation = (Math.random() * 30) - 15;
+            card.style.transform = `rotate(${randomRotation}deg)`;
+
+            // Базовая скорость движения
+            let dx = (Math.random() - 0.5) * 1.2;
+            let dy = (Math.random() - 0.5) * 1.2;
+
+            let isHovered = false;
+            card.addEventListener('mouseenter', () => isHovered = true);
+            card.addEventListener('mouseleave', () => {
+                isHovered = false;
+                card.style.transform = `rotate(${randomRotation}deg)`;
+            });
+
+            // ЭФФЕКТ ОТСКОКА ПРИ КЛИКЕ
+            card.addEventListener('click', (event) => {
+                // Находим центр кликнутой карточки
+                const rect = card.getBoundingClientRect();
+                const cardCenterX = rect.left + rect.width / 2;
+                const cardCenterY = rect.top + rect.height / 2;
+
+                // Считаем направление толчка от курсора мыши
+                const angle = Math.atan2(cardCenterY - event.clientY, cardCenterX - event.clientX);
+                
+                // Задаем сильное ускорение (отскок в сторону со скоростью 6)
+                dx = Math.cos(angle) * 6;
+                dy = Math.sin(angle) * 6;
+            });
+
+            const canvas = document.createElement('canvas');
+            card.appendChild(canvas);
+            container.appendChild(card);
+
+            const ctx = canvas.getContext('2d');
+            canvas.width = 150;
+            canvas.height = 150;
+
+            const shapeSpeed = 0.02 + Math.random() * 0.04;
+            const shapeSize = 15 + Math.random() * 20;
+            const type = Math.floor(Math.random() * 3);
+            const hue = Math.floor(Math.random() * 360);
+            const color = `hsl(${hue}, 100%, 60%)`;
+            let angle = Math.random() * 10;
+
+            function animateCanvas() {
+                ctx.fillStyle = 'rgba(20, 20, 20, 0.1)';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                
+                ctx.save();
+                ctx.translate(canvas.width / 2, canvas.height / 2);
+                angle += shapeSpeed;
+                ctx.fillStyle = color;
+                ctx.strokeStyle = color;
+                ctx.lineWidth = 3;
+
+                if (type === 0) {
+                    ctx.rotate(angle);
+                    ctx.strokeRect(-shapeSize/2, -shapeSize/2, shapeSize, shapeSize);
+                } else if (type === 1) {
+                    const pulseSize = shapeSize + Math.sin(angle) * 8;
+                    ctx.beginPath();
+                    ctx.arc(Math.cos(angle)*15, Math.sin(angle)*15, pulseSize/2, 0, Math.PI * 2);
+                    ctx.fill();
+                } else {
+                    ctx.rotate(angle * 1.5);
+                    ctx.beginPath();
+                    ctx.moveTo(0,0);
+                    ctx.lineTo(shapeSize * 1.2, 0);
+                    ctx.stroke();
+                }
+
+                ctx.restore();
+                requestAnimationFrame(animateCanvas);
+            }
+            animateCanvas();
+
+            const cardData = {
+                element: card,
+                size: size,
+                get x() { return currentX; },
+                get y() { return currentY; },
+                updatePhysics: function() {
+                    // Плавно возвращаем скорость к нормальной, если она была ускорена кликом (трение)
+                    if (Math.abs(dx) > 1.2) dx *= 0.98;
+                    if (Math.abs(dy) > 1.2) dy *= 0.98;
+
+                    if (isHovered) return;
+
+                    currentX += dx;
+                    currentY += dy;
+
+                    if (currentX <= 5 || currentX >= window.innerWidth - size - 5) {
+                        dx *= -1;
+                        currentX = Math.max(5, Math.min(currentX, window.innerWidth - size - 5));
+                    }
+
+                    if (currentY <= startY || currentY >= endY - size) {
+                        dy *= -1;
+                        currentY = Math.max(startY, Math.min(currentY, endY - size));
+                    }
+
+                    card.style.left = `${currentX}px`;
+                    card.style.top = `${currentY}px`;
+                }
+            };
+
+            flyingCards.push(cardData);
+        }
+
+        function updateGlobalPhysics() {
+            for (let i = 0; i < flyingCards.length; i++) {
+                flyingCards[i].updatePhysics();
+            }
+            requestAnimationFrame(updateGlobalPhysics);
+        }
+
+        function initGlobalChaos() {
+            // Смещаем стартовое появление чуть ниже (от 150px), чтобы освободить место под заголовок
+            const initialHeight = window.innerHeight * 1.5;
+            for (let i = 0; i < 25; i++) {
+                createFlyingCard(150, initialHeight);
+            }
+            container.style.height = `${initialHeight + 400}px`;
+            updateGlobalPhysics();
+        }
+
+        function updateBackgroundColor() {
+            const scrollY = window.scrollY;
+            const hue = Math.floor(scrollY / 15) % 360;
+            document.body.style.backgroundColor = `hsl(${hue}, 25%, 5%)`;
+        }
+
+        window.addEventListener('scroll', () => {
+            updateBackgroundColor();
+
+            const currentTotalHeight = parseInt(container.style.height);
+            if (window.innerHeight + window.scrollY >= currentTotalHeight - 500) {
+                const startY = currentTotalHeight - 300;
+                const endY = currentTotalHeight + window.innerHeight;
+                
+                for (let i = 0; i < 10; i++) {
+                    createFlyingCard(startY, endY);
+                }
+                container.style.height = `${endY}px`;
+            }
+        });
+
+        initGlobalChaos();
+    </script>
+</body>
+</html>
+
+
